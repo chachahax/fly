@@ -72,7 +72,7 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 -- 🟦 Show fly button ONLY on mobile
-if UIS.TouchEnabled and not UIS.MouseEnabled then
+if UIS.TouchEnabled and not UIS.KeyboardEnabled and not UIS.MouseEnabled and not UIS.GamepadEnabled then
     local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
     gui.Name = "FlyToggleGUI"
     gui.ResetOnSpawn = false
