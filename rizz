@@ -1,5 +1,3 @@
--- Fly Script with Safe Toggle (PC + Mobile Compatible)
-
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
@@ -17,32 +15,9 @@ local flyConn, bodyGyro, bodyVel
 local control = {F = 0, B = 0, L = 0, R = 0, U = 0, D = 0}
 local flySpeed = 60
 
--- Create GUI button only once
-if not player.PlayerGui:FindFirstChild("FlyToggleGUI") then
-    local gui = Instance.new("ScreenGui", player.PlayerGui)
-    gui.Name = "FlyToggleGUI"
-    gui.ResetOnSpawn = false
-
-    local button = Instance.new("TextButton", gui)
-    button.Name = "FlyToggleButton"
-    button.Size = UDim2.new(0, 130, 0, 45)
-    button.Position = UDim2.new(0.04, 0, 0.85, 0)
-    button.Text = "Toggle Fly"
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.TextColor3 = Color3.new(1, 1, 1)
-    button.TextScaled = true
-
-    button.MouseButton1Click:Connect(function()
-        flyEnabled = not flyEnabled
-        if flyEnabled then startFly() else stopFly() end
-    end)
-end
-
 -- Fly logic
 function startFly()
     if flyConn then return end
-    print("Fly ON")
-
     bodyGyro = Instance.new("BodyGyro", hrp)
     bodyGyro.P = 9e4
     bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
@@ -56,7 +31,6 @@ function startFly()
         local cam = workspace.CurrentCamera
         local vel = Vector3.zero
 
-        -- PC controls
         vel += cam.CFrame.LookVector * (control.F - control.B)
         vel += cam.CFrame.RightVector * (control.R - control.L)
         vel += Vector3.new(0, control.U - control.D, 0)
@@ -67,13 +41,12 @@ function startFly()
 end
 
 function stopFly()
-    print("Fly OFF")
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
     if bodyVel then bodyVel:Destroy() bodyVel = nil end
 end
 
--- PC Key movement
+-- PC Keyboard toggle (Z)
 UIS.InputBegan:Connect(function(input, processed)
     if processed then return end
     local k = input.KeyCode
@@ -97,3 +70,24 @@ UIS.InputEnded:Connect(function(input)
     elseif k == Enum.KeyCode.Space then control.U = 0
     elseif k == Enum.KeyCode.LeftControl then control.D = 0 end
 end)
+
+-- 🟦 Show fly button ONLY on mobile
+if UIS.TouchEnabled then
+    local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+    gui.Name = "FlyToggleGUI"
+    gui.ResetOnSpawn = false
+
+    local button = Instance.new("TextButton", gui)
+    button.Name = "FlyToggleButton"
+    button.Size = UDim2.new(0, 140, 0, 45)
+    button.Position = UDim2.new(0.04, 0, 0.85, 0)
+    button.Text = "Toggle Fly"
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextScaled = true
+
+    button.MouseButton1Click:Connect(function()
+        flyEnabled = not flyEnabled
+        if flyEnabled then startFly() else stopFly() end
+    end)
+end
