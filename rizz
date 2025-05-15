@@ -1,0 +1,99 @@
+-- Fly Script with Safe Toggle (PC + Mobile Compatible)
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- Global fly state
+if _G.FlyRunning then return end
+_G.FlyRunning = true
+
+local flyEnabled = false
+local flyConn, bodyGyro, bodyVel
+local control = {F = 0, B = 0, L = 0, R = 0, U = 0, D = 0}
+local flySpeed = 60
+
+-- Create GUI button only once
+if not player.PlayerGui:FindFirstChild("FlyToggleGUI") then
+    local gui = Instance.new("ScreenGui", player.PlayerGui)
+    gui.Name = "FlyToggleGUI"
+    gui.ResetOnSpawn = false
+
+    local button = Instance.new("TextButton", gui)
+    button.Name = "FlyToggleButton"
+    button.Size = UDim2.new(0, 130, 0, 45)
+    button.Position = UDim2.new(0.04, 0, 0.85, 0)
+    button.Text = "Toggle Fly"
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextScaled = true
+
+    button.MouseButton1Click:Connect(function()
+        flyEnabled = not flyEnabled
+        if flyEnabled then startFly() else stopFly() end
+    end)
+end
+
+-- Fly logic
+function startFly()
+    if flyConn then return end
+    print("Fly ON")
+
+    bodyGyro = Instance.new("BodyGyro", hrp)
+    bodyGyro.P = 9e4
+    bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.CFrame = hrp.CFrame
+
+    bodyVel = Instance.new("BodyVelocity", hrp)
+    bodyVel.velocity = Vector3.zero
+    bodyVel.maxForce = Vector3.new(9e9, 9e9, 9e9)
+
+    flyConn = RS.RenderStepped:Connect(function()
+        local cam = workspace.CurrentCamera
+        local vel = Vector3.zero
+
+        -- PC controls
+        vel += cam.CFrame.LookVector * (control.F - control.B)
+        vel += cam.CFrame.RightVector * (control.R - control.L)
+        vel += Vector3.new(0, control.U - control.D, 0)
+
+        bodyGyro.CFrame = cam.CFrame
+        bodyVel.velocity = vel.Magnitude > 0 and vel.Unit * flySpeed or Vector3.zero
+    end)
+end
+
+function stopFly()
+    print("Fly OFF")
+    if flyConn then flyConn:Disconnect() flyConn = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    if bodyVel then bodyVel:Destroy() bodyVel = nil end
+end
+
+-- PC Key movement
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    local k = input.KeyCode
+    if k == Enum.KeyCode.Z then
+        flyEnabled = not flyEnabled
+        if flyEnabled then startFly() else stopFly() end
+    elseif k == Enum.KeyCode.W then control.F = 1
+    elseif k == Enum.KeyCode.S then control.B = 1
+    elseif k == Enum.KeyCode.A then control.L = 1
+    elseif k == Enum.KeyCode.D then control.R = 1
+    elseif k == Enum.KeyCode.Space then control.U = 1
+    elseif k == Enum.KeyCode.LeftControl then control.D = 1 end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    local k = input.KeyCode
+    if k == Enum.KeyCode.W then control.F = 0
+    elseif k == Enum.KeyCode.S then control.B = 0
+    elseif k == Enum.KeyCode.A then control.L = 0
+    elseif k == Enum.KeyCode.D then control.R = 0
+    elseif k == Enum.KeyCode.Space then control.U = 0
+    elseif k == Enum.KeyCode.LeftControl then control.D = 0 end
+end)
